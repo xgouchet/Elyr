@@ -10,7 +10,6 @@ import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.annotation.MapForgery
 import fr.xgouchet.elmyr.annotation.PairForgery
-import fr.xgouchet.elmyr.annotation.RegexForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import fr.xgouchet.elmyr.inject.reflect.invokePrivate
@@ -124,7 +123,6 @@ class DefaultForgeryInjector : ForgeryInjector {
                 is FloatForgery -> getFloatForgery(forge, annotation, property)
                 is DoubleForgery -> getDoubleForgery(forge, annotation, property)
                 is StringForgery -> getStringForgery(forge, annotation, property)
-                is RegexForgery -> getRegexForgery(forge, annotation, property)
                 is AdvancedForgery -> getAdvancedForgery(forge, annotation, property)
                 is MapForgery -> getMapForgery(forge, annotation, property)
                 is PairForgery -> getPairForgery(forge, annotation, property)
@@ -135,7 +133,12 @@ class DefaultForgeryInjector : ForgeryInjector {
 
         if (value != null) {
             property.setter.invokePrivate(target, value)
-            listener?.onFieldInjected(clazz.java, property.returnType.javaType, property.name, value)
+            listener?.onFieldInjected(
+                clazz.java,
+                property.returnType.javaType,
+                property.name,
+                value
+            )
         }
     }
 
@@ -265,24 +268,30 @@ class DefaultForgeryInjector : ForgeryInjector {
             forgery = { aStringMatching(annotation.regex) }
         } else {
             forgery = when (annotation.type) {
-                StringForgeryType.ALPHABETICAL -> { -> anAlphabeticalString(annotation.case, annotation.size) }
-                StringForgeryType.ALPHA_NUMERICAL -> { -> anAlphaNumericalString(annotation.case, annotation.size) }
+                StringForgeryType.ALPHABETICAL -> { ->
+                    anAlphabeticalString(
+                        annotation.case,
+                        annotation.size
+                    )
+                }
+                StringForgeryType.ALPHA_NUMERICAL -> { ->
+                    anAlphaNumericalString(
+                        annotation.case,
+                        annotation.size
+                    )
+                }
                 StringForgeryType.NUMERICAL -> { -> aNumericalString(annotation.size) }
-                StringForgeryType.HEXADECIMAL -> { -> anHexadecimalString(annotation.case, annotation.size) }
+                StringForgeryType.HEXADECIMAL -> { ->
+                    anHexadecimalString(
+                        annotation.case,
+                        annotation.size
+                    )
+                }
                 StringForgeryType.WHITESPACE -> { -> aWhitespaceString(annotation.size) }
                 StringForgeryType.ASCII -> { -> anAsciiString(annotation.size) }
                 StringForgeryType.ASCII_EXTENDED -> { -> anExtendedAsciiString(annotation.size) }
             }
         }
-        return getPrimitiveForgery(property.returnType, String::class, forge, forgery)
-    }
-
-    private fun getRegexForgery(
-        forge: Forge,
-        annotation: RegexForgery,
-        property: KMutableProperty<*>
-    ): Any {
-        val forgery: Forge.() -> String = { aStringMatching(annotation.value) }
         return getPrimitiveForgery(property.returnType, String::class, forge, forgery)
     }
 
@@ -425,8 +434,22 @@ class DefaultForgeryInjector : ForgeryInjector {
         forgery: Forge.() -> Any
     ): Any {
         return when (classifier) {
-            in knownLists -> forge.aList { getPrimitiveForgery(arguments[0].type!!, klass, forge, forgery) }
-            in knownSets -> forge.aList { getPrimitiveForgery(arguments[0].type!!, klass, forge, forgery) }.toSet()
+            in knownLists -> forge.aList {
+                getPrimitiveForgery(
+                    arguments[0].type!!,
+                    klass,
+                    forge,
+                    forgery
+                )
+            }
+            in knownSets -> forge.aList {
+                getPrimitiveForgery(
+                    arguments[0].type!!,
+                    klass,
+                    forge,
+                    forgery
+                )
+            }.toSet()
             else -> uninjectable(classifier)
         }
     }
@@ -472,8 +495,15 @@ class DefaultForgeryInjector : ForgeryInjector {
 
     companion object {
         private val knownAnnotations = setOf<KClass<*>>(
-            Forgery::class, BoolForgery::class, IntForgery::class, LongForgery::class, FloatForgery::class,
-            DoubleForgery::class, StringForgery::class, RegexForgery::class, AdvancedForgery::class, MapForgery::class
+            Forgery::class,
+            BoolForgery::class,
+            IntForgery::class,
+            LongForgery::class,
+            FloatForgery::class,
+            DoubleForgery::class,
+            StringForgery::class,
+            AdvancedForgery::class,
+            MapForgery::class
         )
         private val knownLists = setOf<KClass<*>>(
             List::class, Collection::class

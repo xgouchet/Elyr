@@ -13,11 +13,11 @@ public class JavaInjectedStrings {
     @StringForgery(type = StringForgeryType.NUMERICAL, size = 42)
     public Set<String> publicNumericalStringSet;
 
-    @RegexForgery("[abc]+")
+    @StringForgery(regex = "[abc]+")
     public String publicRegex;
 
     // 110e8400-e29b-11d4-a716-446655440000
-    @RegexForgery("\\d{8}-\\d{4}-\\d{4}-\\d{4}-\\d{12}")
+    @StringForgery(regex = "\\d{8}-\\d{4}-\\d{4}-\\d{4}-\\d{12}")
     public List<String> publicUUIDList;
 
 

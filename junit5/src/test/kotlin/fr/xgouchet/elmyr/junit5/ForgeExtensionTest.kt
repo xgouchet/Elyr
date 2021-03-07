@@ -13,7 +13,6 @@ import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
-import fr.xgouchet.elmyr.annotation.RegexForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import fr.xgouchet.elmyr.junit5.fixture.BarFactory
@@ -1408,22 +1407,22 @@ internal class Reflekta(@Forgery s: String) {
 
     // region Regex
 
-    fun withRegex(@RegexForgery("[a-c]+") s: String) {
+    fun withRegex(@StringForgery(regex = "[a-c]+") s: String) {
     }
 
-    fun withNotRegex(@RegexForgery("[a-c]+") f: Float) {
+    fun withNotRegex(@StringForgery(regex = "[a-c]+") f: Float) {
     }
 
-    fun withRegexList(@RegexForgery("[a-c]+") b: List<String>) {
+    fun withRegexList(@StringForgery(regex = "[a-c]+") b: List<String>) {
     }
 
-    fun withRegexSet(@RegexForgery("[a-c]+") b: Set<String>) {
+    fun withRegexSet(@StringForgery(regex = "[a-c]+") b: Set<String>) {
     }
 
-    fun withRegexCollection(@RegexForgery("[a-c]+") b: Collection<String>) {
+    fun withRegexCollection(@StringForgery(regex = "[a-c]+") b: Collection<String>) {
     }
 
-    fun withRegexNestedList(@RegexForgery("[a-c]+") b: List<Set<String>>) {
+    fun withRegexNestedList(@StringForgery(regex = "[a-c]+") b: List<Set<String>>) {
     }
 
     // endregion

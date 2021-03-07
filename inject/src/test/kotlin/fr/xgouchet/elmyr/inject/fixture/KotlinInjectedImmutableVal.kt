@@ -6,7 +6,6 @@ import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
-import fr.xgouchet.elmyr.annotation.RegexForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 
@@ -33,6 +32,6 @@ class KotlinInjectedImmutableVal {
     @StringForgery(StringForgeryType.ALPHA_NUMERICAL)
     val finalString: String = "spam"
 
-    @RegexForgery(".*")
+    @StringForgery(regex = ".*")
     val finalRegex: String = "foo"
 }

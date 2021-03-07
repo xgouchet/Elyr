@@ -74,8 +74,6 @@ internal class BaseState<T>(
     // region Internal
 
     private fun handleAlternation(): State {
-
-        println("Accessing parentNode for ${ongoingNode.javaClass.simpleName}")
         val parentNode = ongoingNode.getParent()
 
         // create alternation
@@ -85,7 +83,6 @@ internal class BaseState<T>(
 
         // update ongoing node
         alternation.add(ongoingNode)
-        println("Updating parentNode for ${ongoingNode.javaClass.simpleName}")
         ongoingNode.updateParent(alternation)
 
         // create new sequence

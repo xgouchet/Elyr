@@ -12,7 +12,6 @@ import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.annotation.MapForgery
 import fr.xgouchet.elmyr.annotation.PairForgery
-import fr.xgouchet.elmyr.annotation.RegexForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import fr.xgouchet.elmyr.junit5.fixture.Bar
@@ -155,13 +154,7 @@ internal open class KotlinAnnotationTest {
     // region Strings
 
     @Test
-    fun injectStringWithRegex(@RegexForgery(TEST_REGEX) s: String) {
-        assertThat(s).matches(TEST_REGEX)
-        checkForgeryInjectedInField()
-    }
-
-    @Test
-    fun injectStringWithRegex2(@StringForgery(regex = TEST_REGEX) s: String) {
+    fun injectStringWithRegex(@StringForgery(regex = TEST_REGEX) s: String) {
         assertThat(s).matches(TEST_REGEX)
         checkForgeryInjectedInField()
     }

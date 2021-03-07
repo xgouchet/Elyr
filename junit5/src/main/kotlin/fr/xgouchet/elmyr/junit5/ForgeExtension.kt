@@ -58,7 +58,6 @@ class ForgeExtension :
         FloatForgeryParamResolver,
         DoubleForgeryParamResolver,
         StringForgeryParamResolver,
-        RegexForgeryParamResolver,
         ForgeryParamResolver,
         AdvancedForgeryParamResolver,
         MapForgeryParamResolver,

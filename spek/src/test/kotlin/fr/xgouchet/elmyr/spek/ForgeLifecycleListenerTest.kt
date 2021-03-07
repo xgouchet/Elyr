@@ -3,7 +3,6 @@ package fr.xgouchet.elmyr.spek
 import com.nhaarman.mockitokotlin2.mock
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery
-import fr.xgouchet.elmyr.annotation.RegexForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import fr.xgouchet.elmyr.junit5.ForgeExtension
@@ -74,7 +73,7 @@ internal class ForgeLifecycleListenerTest {
 
     lateinit var testedListener: ForgeLifecycleListener
 
-    @RegexForgery("([a-z]{2,5}\\.){4}")
+    @StringForgery(regex = "([a-z]{2,5}\\.){4}")
     lateinit var fakeRootPackage: String
 
     @StringForgery(StringForgeryType.ALPHABETICAL)
