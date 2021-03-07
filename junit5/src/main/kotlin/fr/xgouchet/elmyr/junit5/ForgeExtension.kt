@@ -51,12 +51,12 @@ class ForgeExtension :
     private val injectedData: MutableList<ForgeTarget<*>> = mutableListOf()
 
     private val parameterResolvers = listOf(
-        ForgeParamResolver,
-        BooleanForgeryParamResolver,
-        IntForgeryParamResolver,
-        LongForgeryParamResolver,
-        FloatForgeryParamResolver,
-        DoubleForgeryParamResolver,
+        ForgeParamResolver(),
+        BooleanForgeryParamResolver(),
+        IntForgeryParamResolver(),
+        LongForgeryParamResolver(),
+        FloatForgeryParamResolver(),
+        DoubleForgeryParamResolver(),
         StringForgeryParamResolver,
         ForgeryParamResolver,
         AdvancedForgeryParamResolver,
@@ -151,7 +151,7 @@ class ForgeExtension :
         extensionContext: ExtensionContext
     ): Boolean {
         val isSupported = parameterResolvers.any {
-            it.supportsParameter(parameterContext, extensionContext)
+            it.supportsParameter(parameterContext, extensionContext, Unit)
         }
 
         if (isSupported && parameterContext.declaringExecutable is Constructor<*>) {

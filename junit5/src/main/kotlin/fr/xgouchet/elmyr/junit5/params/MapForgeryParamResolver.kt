@@ -8,28 +8,30 @@ import java.lang.reflect.WildcardType
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 
-internal object MapForgeryParamResolver : ForgeryResolver {
+internal object MapForgeryParamResolver : ForgeryResolver<Unit> {
 
     // region ForgeryResolver
 
     /** @inheritdoc */
     override fun supportsParameter(
         parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
+        extensionContext: ExtensionContext,
+        forgeryContext: Unit
     ): Boolean {
         return parameterContext.isAnnotated(MapForgery::class.java) &&
-            java.util.Map::class.java.isAssignableFrom(parameterContext.parameter.type)
+                java.util.Map::class.java.isAssignableFrom(parameterContext.parameter.type)
     }
 
     override fun resolveParameter(
         parameterContext: ParameterContext,
         extensionContext: ExtensionContext,
+        forgeryContext: Unit,
         forge: Forge
     ): Any? {
         val annotation = parameterContext.findAnnotation(MapForgery::class.java).get()
         val mapType = parameterContext.parameter.parameterizedType
 
-        return resolveMapParameter(annotation, mapType, forge)
+        return resolveMapParameter(annotation, parameterContext, mapType, forge)
     }
 
     // endregion
@@ -38,6 +40,7 @@ internal object MapForgeryParamResolver : ForgeryResolver {
 
     internal fun resolveMapParameter(
         annotation: MapForgery,
+        parameterContext: ParameterContext,
         type: Type,
         forge: Forge
     ): Map<Any?, Any?> {
@@ -53,8 +56,18 @@ internal object MapForgeryParamResolver : ForgeryResolver {
         val valueType = mapType.actualTypeArguments[1]
 
         return forge.aMap {
-            val forgedKey = AdvancedForgeryParamResolver.resolveAdvancedParameter(keyAnnotation, keyType, forge)
-            val forgedValue = AdvancedForgeryParamResolver.resolveAdvancedParameter(valueAnnotation, valueType, forge)
+            val forgedKey = AdvancedForgeryParamResolver.resolveAdvancedParameter(
+                keyAnnotation,
+                parameterContext,
+                keyType,
+                forge
+            )
+            val forgedValue = AdvancedForgeryParamResolver.resolveAdvancedParameter(
+                valueAnnotation,
+                parameterContext,
+                valueType,
+                forge
+            )
             forgedKey to forgedValue
         }
     }

@@ -12,14 +12,15 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 
 internal object ForgeryParamResolver :
-    ForgeryResolver {
+    ForgeryResolver<Unit> {
 
     // region ForgeryResolver
 
     /** @inheritdoc */
     override fun supportsParameter(
         parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
+        extensionContext: ExtensionContext,
+        forgeryContext: Unit
     ): Boolean {
         return parameterContext.isAnnotated(Forgery::class.java)
     }
@@ -28,6 +29,7 @@ internal object ForgeryParamResolver :
     override fun resolveParameter(
         parameterContext: ParameterContext,
         extensionContext: ExtensionContext,
+        forgeryContext: Unit,
         forge: Forge
     ): Any? {
         val type = parameterContext.parameter.type

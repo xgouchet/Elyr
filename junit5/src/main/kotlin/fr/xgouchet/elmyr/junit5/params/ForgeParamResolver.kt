@@ -4,12 +4,13 @@ import fr.xgouchet.elmyr.Forge
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 
-internal object ForgeParamResolver : ForgeryResolver {
+internal open class ForgeParamResolver<C> : ForgeryResolver<C> {
 
     /** @inheritdoc */
     override fun supportsParameter(
         parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
+        extensionContext: ExtensionContext,
+        forgeryContext: C
     ): Boolean {
         return parameterContext.parameter.type == Forge::class.java
     }
@@ -18,6 +19,7 @@ internal object ForgeParamResolver : ForgeryResolver {
     override fun resolveParameter(
         parameterContext: ParameterContext,
         extensionContext: ExtensionContext,
+        forgeryContext: C,
         forge: Forge
     ): Any? {
         return forge

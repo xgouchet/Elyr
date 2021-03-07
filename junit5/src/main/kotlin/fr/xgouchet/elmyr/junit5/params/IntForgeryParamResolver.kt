@@ -2,9 +2,10 @@ package fr.xgouchet.elmyr.junit5.params
 
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
+import org.junit.jupiter.api.extension.ParameterContext
 
-internal object IntForgeryParamResolver :
-    PrimitiveForgeryParamResolver<IntForgery>(
+internal open class IntForgeryParamResolver<C> :
+    PrimitiveForgeryParamResolver<IntForgery, C>(
         java.lang.Integer.TYPE,
         java.lang.Integer::class.java,
         IntForgery::class.java
@@ -12,7 +13,16 @@ internal object IntForgeryParamResolver :
 
     // region PrimitiveForgeryParamResolver
 
-    override fun forgePrimitive(annotation: IntForgery, forge: Forge): Any? {
+    override fun supportsForgeryContext(forgeryContext: C): Boolean {
+        return true
+    }
+
+    override fun forgePrimitive(
+        annotation: IntForgery,
+        parameterContext: ParameterContext,
+        forgeryContext: C,
+        forge: Forge
+    ): Any? {
         return if (annotation.standardDeviation >= 0) {
             check(annotation.min == Int.MIN_VALUE) {
                 "You can only use an IntForgery with min and max or with mean and standardDeviation"

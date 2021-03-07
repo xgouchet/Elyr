@@ -2,9 +2,10 @@ package fr.xgouchet.elmyr.junit5.params
 
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery
+import org.junit.jupiter.api.extension.ParameterContext
 
-internal object LongForgeryParamResolver :
-    PrimitiveForgeryParamResolver<LongForgery>(
+internal open class LongForgeryParamResolver<C> :
+    PrimitiveForgeryParamResolver<LongForgery, C>(
         java.lang.Long.TYPE,
         java.lang.Long::class.java,
         LongForgery::class.java
@@ -12,7 +13,16 @@ internal object LongForgeryParamResolver :
 
     // region PrimitiveForgeryParamResolver
 
-    override fun forgePrimitive(annotation: LongForgery, forge: Forge): Any? {
+    override fun supportsForgeryContext(forgeryContext: C): Boolean {
+        return true
+    }
+
+    override fun forgePrimitive(
+        annotation: LongForgery,
+        parameterContext: ParameterContext,
+        forgeryContext: C,
+        forge: Forge
+    ): Any? {
         return if (annotation.standardDeviation >= 0) {
             check(annotation.min == Long.MIN_VALUE) {
                 "You can only use an LongForgery with min and max or with mean and standardDeviation"

@@ -2,9 +2,10 @@ package fr.xgouchet.elmyr.junit5.params
 
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
+import org.junit.jupiter.api.extension.ParameterContext
 
-internal object FloatForgeryParamResolver :
-    PrimitiveForgeryParamResolver<FloatForgery>(
+internal open class FloatForgeryParamResolver<C> :
+    PrimitiveForgeryParamResolver<FloatForgery, C>(
         java.lang.Float.TYPE,
         java.lang.Float::class.java,
         FloatForgery::class.java
@@ -12,7 +13,16 @@ internal object FloatForgeryParamResolver :
 
     // region PrimitiveForgeryParamResolver
 
-    override fun forgePrimitive(annotation: FloatForgery, forge: Forge): Any? {
+    override fun supportsForgeryContext(forgeryContext: C): Boolean {
+        return true
+    }
+
+    override fun forgePrimitive(
+        annotation: FloatForgery,
+        parameterContext: ParameterContext,
+        forgeryContext: C,
+        forge: Forge
+    ): Any? {
         return if (!annotation.standardDeviation.isNaN()) {
             check(annotation.min == -Float.MAX_VALUE) {
                 "You can only use an FloatForgery with min and max or with mean and standardDeviation"

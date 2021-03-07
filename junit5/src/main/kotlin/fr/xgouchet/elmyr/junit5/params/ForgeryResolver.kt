@@ -5,7 +5,7 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 import org.junit.jupiter.api.extension.ParameterResolver
 
-internal interface ForgeryResolver {
+internal interface ForgeryResolver<C> {
 
     /**
      * Determine if this resolver supports resolution of an argument for the
@@ -20,7 +20,8 @@ internal interface ForgeryResolver {
      */
     fun supportsParameter(
         parameterContext: ParameterContext,
-        extensionContext: ExtensionContext
+        extensionContext: ExtensionContext,
+        forgeryContext: C
     ): Boolean
 
     /**
@@ -39,6 +40,7 @@ internal interface ForgeryResolver {
     fun resolveParameter(
         parameterContext: ParameterContext,
         extensionContext: ExtensionContext,
+        forgeryContext: C,
         forge: Forge
     ): Any?
 }
