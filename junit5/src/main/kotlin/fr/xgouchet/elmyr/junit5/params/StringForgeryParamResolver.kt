@@ -5,8 +5,8 @@ import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import org.junit.jupiter.api.extension.ParameterContext
 
-internal object StringForgeryParamResolver :
-    PrimitiveForgeryParamResolver<StringForgery, Unit>(
+internal open class StringForgeryParamResolver<C> :
+    PrimitiveForgeryParamResolver<StringForgery, C>(
         null,
         java.lang.String::class.java,
         StringForgery::class.java
@@ -14,14 +14,14 @@ internal object StringForgeryParamResolver :
 
     // region PrimitiveForgeryParamResolver
 
-    override fun supportsForgeryContext(forgeryContext: Unit): Boolean {
+    override fun supportsForgeryContext(forgeryContext: C): Boolean {
         return true
     }
 
     override fun forgePrimitive(
         annotation: StringForgery,
         parameterContext: ParameterContext,
-        forgeryContext: Unit,
+        forgeryContext: C,
         forge: Forge
     ): Any? {
         return if (annotation.regex.isNotEmpty()) {

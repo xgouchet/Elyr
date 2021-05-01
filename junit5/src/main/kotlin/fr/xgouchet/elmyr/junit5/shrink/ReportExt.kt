@@ -22,9 +22,9 @@ internal fun <T : Comparable<T>> List<InjectionReport<T>>.boundaries(
     val sorted = this.sortedBy { it.target.value }
     val initial = sorted.first()
     sorted.drop(1).fold(initial) { acc, next ->
-        if ((acc.exception == null && next.exception != null) ||
-            (acc.exception != null && next.exception == null)
-        ) {
+        val failureAppeared = acc.exception == null && next.exception != null
+        val failureDisappeared = acc.exception != null && next.exception == null
+        if (failureAppeared || failureDisappeared) {
             val candidate = boundary(acc.target.value, next.target.value)
             if (candidate != acc.target.value && candidate != next.target.value) {
                 boundaries.add(candidate)

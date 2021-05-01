@@ -17,6 +17,7 @@ import fr.xgouchet.elmyr.junit5.params.LongForgeryParamResolver
 import fr.xgouchet.elmyr.junit5.params.MapForgeryParamResolver
 import fr.xgouchet.elmyr.junit5.params.PairForgeryParamResolver
 import fr.xgouchet.elmyr.junit5.params.StringForgeryParamResolver
+import fr.xgouchet.elmyr.junit5.shrink.InjectionReport
 import fr.xgouchet.elmyr.junit5.shrink.InvocationReport
 import fr.xgouchet.elmyr.junit5.shrink.Shrink
 import fr.xgouchet.elmyr.junit5.shrink.ShrinkInvocationContext
@@ -25,6 +26,8 @@ import fr.xgouchet.elmyr.junit5.shrink.params.DoubleShrinkingParamResolver
 import fr.xgouchet.elmyr.junit5.shrink.params.FloatShrinkingParamResolver
 import fr.xgouchet.elmyr.junit5.shrink.params.IntShrinkingParamResolver
 import fr.xgouchet.elmyr.junit5.shrink.params.LongShrinkingParamResolver
+import fr.xgouchet.elmyr.junit5.shrink.params.StringShrinkingParamResolver
+import fr.xgouchet.elmyr.junit5.shrink.reportForParam
 import java.lang.reflect.Constructor
 import java.lang.reflect.Type
 import java.util.Locale
@@ -44,6 +47,7 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContext
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider
 import org.junit.platform.commons.support.AnnotationSupport.isAnnotated
 import org.junit.platform.commons.util.AnnotationUtils.findAnnotation
+import java.lang.AssertionError
 
 /**
  * A JUnit Jupiter extension that can inject forgeries in the test class's fields/properties/method
@@ -74,7 +78,8 @@ class ForgeExtension :
         IntShrinkingParamResolver(),
         LongShrinkingParamResolver(),
         FloatShrinkingParamResolver(),
-        DoubleShrinkingParamResolver()
+        DoubleShrinkingParamResolver(),
+        StringShrinkingParamResolver()
     )
 
     private val parameterResolvers = listOf(
@@ -84,7 +89,7 @@ class ForgeExtension :
         LongForgeryParamResolver(),
         FloatForgeryParamResolver(),
         DoubleForgeryParamResolver(),
-        StringForgeryParamResolver,
+        StringForgeryParamResolver(),
         ForgeryParamResolver,
         AdvancedForgeryParamResolver,
         MapForgeryParamResolver,
@@ -130,21 +135,8 @@ class ForgeExtension :
     // region AfterTestExecutionCallback
 
     override fun afterTestExecution(context: ExtensionContext) {
-        val parentContext = context.parent.orNull() ?: return
-        val parentUniqueId = parentContext.uniqueId
-        if (invocationReports.containsKey(parentUniqueId)) {
-            val reports = invocationReports[parentUniqueId] ?: return
-            val contextUniqueId = context.uniqueId
-            if (!reports.any { it.contextUniqueId == contextUniqueId }) {
-                reports.add(
-                    InvocationReport(
-                        contextUniqueId,
-                        context.displayName,
-                        ArrayList(injectedData),
-                        null
-                    )
-                )
-            }
+        if (addShrinkingReport(context, null)) {
+            reportLastShrinkingExecution(context)
         }
     }
 
@@ -168,21 +160,22 @@ class ForgeExtension :
             "@Shrink annotation must have a maximumRunCount greater than 0"
         }
 
-        if (System.getProperty("shrinking").orEmpty().toBoolean()) {
+        val isShrinkingEnabled = true
+        // TODO System.getProperty("shrinking").orEmpty().toBoolean()
+        if (isShrinkingEnabled) {
             val uniqueId = context.uniqueId
+            context.getStore(STORE_NAMESPACE).put(STORE_SHRINK_KEY, shrink.maximumRunCount)
             val spliterator = spliteratorUnknownSize(
                 ShrinkTestTemplateIterator(
-                    uniqueId,
-                    context.displayName,
-                    shrink.maximumRunCount,
-                    invocationReports
+                    context,
+                    shrink.maximumRunCount
                 ),
                 Spliterator.NONNULL
             )
             invocationReports[uniqueId] = mutableListOf()
             return stream(spliterator, false)
         } else {
-            println("Shrinking is not enabled")
+            System.err.println("Shrinking is not enabled")
             return Stream.of(ShrinkInvocationContext(context.displayName))
         }
 
@@ -194,22 +187,12 @@ class ForgeExtension :
 
     /** @inheritdoc */
     override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
-        val parent = context.parent.orNull()
-        val parentUniqueId = parent?.uniqueId
-        if (parentUniqueId != null && invocationReports.containsKey(parentUniqueId)) {
-            invocationReports[parentUniqueId]!!.add(
-                InvocationReport(
-                    context.uniqueId,
-                    context.displayName,
-                    ArrayList(injectedData),
-                    throwable
-                )
-            )
-            return
+        if (addShrinkingReport(context, throwable)) {
+            reportLastShrinkingExecution(context)
+        } else {
+            System.err.println(getErrorReport(context))
+            throw throwable
         }
-
-        System.err.println(getErrorReport(context))
-        throw throwable
     }
 
     private fun getErrorReport(context: ExtensionContext): String {
@@ -363,6 +346,131 @@ class ForgeExtension :
 
     // endregion
 
+    // region Internal Shrinking
+
+    private fun addShrinkingReport(context: ExtensionContext, throwable: Throwable?): Boolean {
+        val parent = context.parent.orNull() ?: return false
+        val parentUniqueId = parent.uniqueId
+        val report = invocationReports[parentUniqueId] ?: return false
+        if (!report.any { it.contextUniqueId == context.uniqueId }) {
+            report.add(
+                InvocationReport(
+                    context.uniqueId,
+                    context.displayName,
+                    ArrayList(injectedData),
+                    throwable
+                )
+            )
+        }
+        return true
+    }
+
+    private fun reportLastShrinkingExecution(context: ExtensionContext) {
+        val parent = context.parent.orNull() ?: return
+        val shrinkingCount = parent.getStore(STORE_NAMESPACE).get(STORE_SHRINK_KEY) as? Int
+        if (shrinkingCount == null) {
+            return
+        }
+
+        val parentUniqueId = parent.uniqueId
+        val report = invocationReports[parentUniqueId] ?: return
+        if (report.size == shrinkingCount) {
+            if (report.any { it.exception != null }) {
+                reportFailures(parent.displayName, report)
+            }
+        }
+    }
+
+    private fun reportFailures(displayName: String, invocationReports: List<InvocationReport>) {
+
+        val paramTargets = invocationReports.first().injectedData.filter { it.type == "param" }
+
+        val failingMessages = mutableListOf<String>()
+        failingMessages.addAll(
+            failingRangesReports<Int>(paramTargets, invocationReports) { a, b -> a..b }
+        )
+        failingMessages.addAll(
+            failingRangesReports<Long>(paramTargets, invocationReports) { a, b -> a..b }
+        )
+        failingMessages.addAll(
+            failingRangesReports<Float>(paramTargets, invocationReports) { a, b -> a..b }
+        )
+        failingMessages.addAll(
+            failingRangesReports<Double>(paramTargets, invocationReports) { a, b -> a..b }
+        )
+        failingMessages.addAll(
+            failingValuesReports<String>(paramTargets, invocationReports, Comparator { s1, s2 ->
+                if (s1.length == s2.length) {
+                    s1.compareTo(s2)
+                } else {
+                    s1.length - s2.length
+                }
+            })
+        )
+
+        throw AssertionError(
+            "Test $displayName failed with shrunk param\n" + failingMessages.joinToString("\n"),
+            invocationReports.mapNotNull { it.exception }.first()
+        )
+    }
+
+    private inline fun <reified T : Comparable<T>> failingRangesReports(
+        targets: List<ForgeTarget<*>>,
+        invocationReports: List<InvocationReport>,
+        noinline rangeFactory: (T, T) -> ClosedRange<T>
+    ): List<String> {
+        val filter = targets.filter { it.value is T }
+        return filter
+            .map {
+                val sortedReports = invocationReports.reportForParam<T>(it.name)
+                    .sortedBy { r -> r.target.value }
+                val failingRanges = failingRanges(sortedReports, rangeFactory)
+                "- parameter ${it.name}: " +
+                        failingRanges.joinToString { range ->
+                            if (range.start == range.endInclusive) range.start.toString()
+                            else "[${range.start}…${range.endInclusive}]"
+                        }
+            }
+    }
+
+    private inline fun <reified T> failingValuesReports(
+        targets: List<ForgeTarget<*>>,
+        invocationReports: List<InvocationReport>,
+        comparator: Comparator<T>
+    ): List<String> {
+        return targets.filter { it.value is T }
+            .map { target ->
+                val failingValues = invocationReports.reportForParam<T>(target.name)
+                    .filter { it.exception != null }
+                    .map { it.target.value }
+                    .sortedWith(comparator)
+                "- parameter ${target.name}: " + failingValues.joinToString()
+            }
+    }
+
+    private fun <T : Comparable<T>> failingRanges(
+        reports: List<InjectionReport<T>>,
+        rangeFactory: (T, T) -> ClosedRange<T>
+    ): List<ClosedRange<T>> {
+        val failingRanges = mutableListOf<ClosedRange<T>>()
+        val last = reports.foldIndexed(null as ClosedRange<T>?) { i, acc, next ->
+            if (next.exception == null) {
+                if (acc != null) failingRanges.add(acc)
+                null
+            } else {
+                if (acc == null) {
+                    rangeFactory(next.target.value, next.target.value)
+                } else {
+                    rangeFactory(acc.start, next.target.value)
+                }
+            }
+        }
+        if (last != null) failingRanges.add(last)
+        return failingRanges
+    }
+
+    // endregion
+
     // region Internal
 
     private fun resetSeed(context: ExtensionContext) {
@@ -422,5 +530,8 @@ class ForgeExtension :
             val storedForge = globalStore.get(EXTENSION_STORE_FORGE_KEY)
             return storedForge as? Forge
         }
+
+        private val STORE_NAMESPACE = ExtensionContext.Namespace.create("fr.xgouchet.elmyr.junit5")
+        private val STORE_SHRINK_KEY = "${ForgeExtension::class.java.canonicalName}.shrink"
     }
 }

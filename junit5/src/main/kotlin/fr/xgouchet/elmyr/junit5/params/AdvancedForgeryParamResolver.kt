@@ -159,7 +159,7 @@ internal object AdvancedForgeryParamResolver : ForgeryResolver<Unit> {
         forge: Forge
     ): Any? {
         val usingAnnotation = forge.anElementFrom(*annotation.string)
-        return StringForgeryParamResolver.resolveParameter(
+        return StringForgeryParamResolver<Unit>().resolveParameter(
             usingAnnotation,
             parameterContext,
             Unit,

@@ -4,9 +4,9 @@ import fr.xgouchet.elmyr.annotation.DoubleForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
+import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.shrink.Shrink
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestTemplate
 import org.junit.jupiter.api.extension.ExtendWith
@@ -64,17 +64,17 @@ internal class KotlinShrinkingTest {
         if ((d in 42.0..666.0) || (d in 34605.0..44523.0)) assertThat(d).isLessThan(0.0)
     }
 
+    @Disabled
+    @Shrink(maximumRunCount = RUN_COUNT_FAILING)
+    @TestTemplate
+    fun testFailing(@StringForgery s: String) {
+        runCountFailing++
+
+        assertThat(s.toLowerCase())
+            .doesNotContain("x")
+    }
+
     companion object {
-
-        @AfterAll
-        @JvmStatic
-        fun `it's just another brick in the wall`() {
-            assertThat(runCountNoParams).isEqualTo(RUN_COUNT_NO_PARAMS)
-            assertThat(runCountFailing).isEqualTo(RUN_COUNT_FAILING)
-
-            assertThat(runCountWithParams.size).isEqualTo(RUN_COUNT_WITH_PARAMS)
-            assertThat(runCountWithParams.toSet().size).isGreaterThan(RUN_COUNT_WITH_PARAMS / 3)
-        }
 
         const val RUN_COUNT_NO_PARAMS = 11
         const val RUN_COUNT_WITH_PARAMS = 13

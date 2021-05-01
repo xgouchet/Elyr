@@ -2,9 +2,7 @@ package fr.xgouchet.elmyr.junit5.shrink.params
 
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.DoubleForgery
-import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.junit5.params.DoubleForgeryParamResolver
-import fr.xgouchet.elmyr.junit5.params.FloatForgeryParamResolver
 import fr.xgouchet.elmyr.junit5.shrink.InvocationReport
 import fr.xgouchet.elmyr.junit5.shrink.boundaries
 import fr.xgouchet.elmyr.junit5.shrink.reportForParam
